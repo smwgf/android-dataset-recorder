@@ -275,10 +275,11 @@ public class MainActivity extends AppCompatActivity {
 
                 // Export the file to disk
                 try {
-                    FileOutputStream output = new FileOutputStream(dest);
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 90, output);
-                    output.flush();
-                    output.close();
+                      WriteFile(imageBytes,path,filename);
+//                    FileOutputStream output = new FileOutputStream(dest);
+//                    bmp.compress(Bitmap.CompressFormat.JPEG, 90, output);
+//                    output.flush();
+//                    output.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -289,6 +290,24 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    public static String WriteFile(byte[] data , String path,String fileName) {
+        File photo=new File(path,fileName);
+
+        if (photo.exists()) {
+            photo.delete();
+        }
+
+        try {
+            FileOutputStream fos=new FileOutputStream(photo.getPath());
+            fos.write(data);
+            fos.close();
+        }
+        catch (java.io.IOException e) {
+            Log.e("ImageUtils", "Exception in file io", e);
+        }
+
+        return(null);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

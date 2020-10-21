@@ -66,7 +66,7 @@ public class IMUManager implements SensorEventListener {
 
         // Set event timestamp to current time in milliseconds
         // http://stackoverflow.com/a/9333605
-        event.timestamp = (new Date()).getTime() + (event.timestamp - System.nanoTime()) / 1000000L;
+        //event.timestamp = (new Date()).getTime() + (event.timestamp - System.nanoTime()) / 1000000L;
 
         // TODO: Figure out better way, for now just use the total time
         // https://code.google.com/p/android/issues/detail?id=56561
@@ -108,8 +108,8 @@ public class IMUManager implements SensorEventListener {
 
                     // Master string of information
                     String data = linear_time
-                            + "," + linear_data[0] + "," + linear_data[1] + "," + linear_data[2]
-                            + "," + angular_data[0] + "," + angular_data[1] + "," + angular_data[2];
+                            + "," + angular_data[0] + "," + angular_data[1] + "," + angular_data[2]
+                            + "," + linear_data[0] + "," + linear_data[1] + "," + linear_data[2];
 
                     // Appends the string to the file and closes
                     writer.write(data + "\n");
