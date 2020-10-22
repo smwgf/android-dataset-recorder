@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/android-dataset-recorder.iml" filepath="$PROJECT_DIR$/.idea/android-dataset-recorder.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/android-dataset-recorder.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/android-dataset-recorder.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/data acquisition.android-dataset-recorder.iml" filepath="$PROJECT_DIR$/.idea/modules/data acquisition.android-dataset-recorder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/data acquisition.android-dataset-recorder.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/data acquisition.android-dataset-recorder.app.iml" />
     </modules>
   </component>
 </project>

@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -65,12 +66,21 @@ public class MainActivity extends AppCompatActivity {
     public static boolean is_recording;
     public static String folder_name;
 
+    public static long InitNanos;;
+    public static long InitMillis;;
+    private static File destSaveImageData;
+    private static String ImagePath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         // Pass to super
         super.onCreate(savedInstanceState);
-
+        //avoid device sleep
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // initial timestamp reference
+        InitMillis = System.currentTimeMillis();
+        InitNanos = System.nanoTime();
+        InitMillis = InitMillis*1000000;
         // Create our layout
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -116,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
                     // Set our folder name
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
                     folder_name = dateFormat.format(new Date());
-
+                    mImuManager.SetIMURecordPath(folder_name);
+                    SetVideoRecordPath();
                     // Also change the text on the button so that it turns into the stop button
                     Button button_record = (Button) findViewById(R.id.button_record);
                     button_record.setText("Stop Recording");
@@ -183,6 +194,35 @@ public class MainActivity extends AppCompatActivity {
         // Call the super
         super.onPause();
     }
+    // set video recording path and logging file once before recording
+    public void SetVideoRecordPath()
+    {
+        // Create folder name
+        String filename = "data_image.txt";
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/dataset_recorder/" + MainActivity.folder_name + "/";
+
+        // Create export file
+        new File(path).mkdirs();
+        destSaveImageData = new File(path + filename);
+
+
+        ImagePath = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/dataset_recorder/" + MainActivity.folder_name + "/images/";
+
+        // Create export file
+        new File(ImagePath).mkdirs();
+
+        try {
+            // If the file does not exist yet, create it
+            if(!destSaveImageData.exists())
+                destSaveImageData.createNewFile();
+        }
+        // Ran into a problem writing to file
+        catch(IOException ioe) {
+            System.err.println("IOException: " + ioe.getMessage());
+        }
+    }
 
     // Taken from OpenCamera project
     // URL: https://github.com/almalence/OpenCamera/blob/master/src/com/almalence/opencam/cameracontroller/Camera2Controller.java#L3455
@@ -198,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Get the next image from the queue
             Image image = ir.acquireNextImage();
-
+            long timestamp = InitMillis+System.nanoTime() - InitNanos;
             // Collection of bytes of the image
             byte[] rez;
 
@@ -232,24 +272,11 @@ public class MainActivity extends AppCompatActivity {
 
                 // Current timestamp of the event
                 // TODO: See if we can use image.getTimestamp()
-                long timestamp = new Date().getTime();
-
-                // Create folder name
-                String filename = "data_image.txt";
-                String path = Environment.getExternalStorageDirectory().getAbsolutePath()
-                        + "/dataset_recorder/" + MainActivity.folder_name + "/";
-
-                // Create export file
-                new File(path).mkdirs();
-                File dest = new File(path + filename);
 
                 try {
-                    // If the file does not exist yet, create it
-                    if(!dest.exists())
-                        dest.createNewFile();
 
                     // The true will append the new data
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(dest, true));
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(destSaveImageData, true));
 
                     // Master string of information
                     String data = timestamp + ",images/" + timestamp + ".jpeg";
@@ -265,17 +292,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Create folder name
-                filename = timestamp + ".jpeg";
-                path = Environment.getExternalStorageDirectory().getAbsolutePath()
-                        + "/dataset_recorder/" + MainActivity.folder_name + "/images/";
-
-                // Create export file
-                new File(path).mkdirs();
-                dest = new File(path + filename);
+                String filename = timestamp + ".jpeg";
 
                 // Export the file to disk
                 try {
-                      WriteFile(imageBytes,path,filename);
+                      WriteFile(imageBytes,ImagePath,filename);
 //                    FileOutputStream output = new FileOutputStream(dest);
 //                    bmp.compress(Bitmap.CompressFormat.JPEG, 90, output);
 //                    output.flush();
@@ -284,7 +305,6 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-
             // Make sure we close the image
             image.close();
         }

@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -39,7 +40,8 @@ public class IMUManager implements SensorEventListener {
     long angular_time;
     int angular_acc;
     float[] angular_data;
-
+    long preEpochNanos = 0;
+    File destToWrite;
     public IMUManager(Activity activity) {
         // Set activity
         this.activity = activity;
@@ -47,6 +49,25 @@ public class IMUManager implements SensorEventListener {
         mSensorManager = (SensorManager)activity.getSystemService(Context.SENSOR_SERVICE);
         mAccel = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mGyro = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+    }
+    // set logging file once before logging
+    public void SetIMURecordPath(String pathToSet){
+        String filename = "data_imu.txt";
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/dataset_recorder/" + pathToSet + "/";
+
+        // Create export file
+        new File(path).mkdirs();
+        destToWrite = new File(path + filename);
+        try {
+            // If the file does not exist yet, create it
+            if (!destToWrite.exists())
+                destToWrite.createNewFile();
+        }
+        // Ran into a problem writing to file
+        catch (IOException ioe) {
+            System.err.println("IOException: " + ioe.getMessage());
+        }
     }
 
     @Override
@@ -70,7 +91,8 @@ public class IMUManager implements SensorEventListener {
 
         // TODO: Figure out better way, for now just use the total time
         // https://code.google.com/p/android/issues/detail?id=56561
-        event.timestamp = new Date().getTime();
+        //event.timestamp = new Date().getTime();
+        event.timestamp = MainActivity.InitMillis+System.nanoTime() - MainActivity.InitNanos;
 
         // Handle accelerometer reading
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -88,26 +110,17 @@ public class IMUManager implements SensorEventListener {
 
             // Write the data to file if we are recording
             if(MainActivity.is_recording) {
+//                long epochNanos = MainActivity.InitMillis+System.nanoTime() - MainActivity.InitNanos;
 
-                // Create folder name
-                String filename = "data_imu.txt";
-                String path = Environment.getExternalStorageDirectory().getAbsolutePath()
-                        + "/dataset_recorder/" + MainActivity.folder_name + "/";
-
-                // Create export file
-                new File(path).mkdirs();
-                File dest = new File(path + filename);
+//                if(preEpochNanos==0 || (epochNanos-preEpochNanos) > 5000000) {
+//                    preEpochNanos=epochNanos;
 
                 try {
-                    // If the file does not exist yet, create it
-                    if(!dest.exists())
-                        dest.createNewFile();
-
                     // The true will append the new data
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(dest, true));
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(destToWrite, true));
 
                     // Master string of information
-                    String data = linear_time
+                    String data = angular_time + "," + linear_time
                             + "," + angular_data[0] + "," + angular_data[1] + "," + angular_data[2]
                             + "," + linear_data[0] + "," + linear_data[1] + "," + linear_data[2];
 
@@ -117,11 +130,10 @@ public class IMUManager implements SensorEventListener {
                     writer.close();
                 }
                 // Ran into a problem writing to file
-                catch(IOException ioe) {
+                catch (IOException ioe) {
                     System.err.println("IOException: " + ioe.getMessage());
                 }
             }
-
             // Reset timestamps
             linear_time = 0;
             angular_time = 0;
