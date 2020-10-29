@@ -2,7 +2,6 @@ package io.rpng.recorder.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
@@ -13,7 +12,6 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -23,7 +21,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -31,7 +28,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,7 +35,7 @@ import java.util.Date;
 import io.rpng.recorder.managers.CameraManager;
 import io.rpng.recorder.R;
 import io.rpng.recorder.managers.GPSManager;
-import io.rpng.recorder.managers.IMUManager;
+import io.rpng.recorder.managers.IMUManagerMultiThread;
 import io.rpng.recorder.views.AutoFitTextureView;
 
 
@@ -57,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private AutoFitTextureView mTextureView;
 
     public static CameraManager mCameraManager;
-    public static IMUManager mImuManager;
+    public static IMUManagerMultiThread mIMUManagerMultiThread;
     public static GPSManager mGpsManager;
     private static SharedPreferences sharedPreferences;
 
@@ -95,7 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Create the camera manager
         mCameraManager = new CameraManager(this, mTextureView, camera2View);
-        mImuManager = new IMUManager(this);
+        //mImuManager = new IMUManager(this);
+        mIMUManagerMultiThread = new IMUManagerMultiThread(this);
         mGpsManager = new GPSManager(this);
 
         // Set our shared preferences
@@ -126,7 +123,8 @@ public class MainActivity extends AppCompatActivity {
                     // Set our folder name
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
                     folder_name = dateFormat.format(new Date());
-                    mImuManager.SetIMURecordPath(folder_name);
+                    //mImuManager.SetIMURecordPath(folder_name);
+                    mIMUManagerMultiThread.StartRecording(folder_name);;
                     SetVideoRecordPath();
                     // Also change the text on the button so that it turns into the stop button
                     Button button_record = (Button) findViewById(R.id.button_record);
@@ -138,8 +136,10 @@ public class MainActivity extends AppCompatActivity {
                 // Else we can assume we pressed the "stop recording" button
                 else {
                     // Just reset the recording button
-                    is_recording = false;
+                    //mImuManager.StopIMURecored();
 
+                    is_recording = false;
+                    mIMUManagerMultiThread.StopRecording();
                     // Also change the text on the button so that it turns into the start button
                     Button button_record = (Button) findViewById(R.id.button_record);
                     button_record.setText("Start Recording");
@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Register the listeners
-        mImuManager.register();
+        //mImuManager.register();
 
         // Start background thread
         mGpsManager.startBackgroundThread();
@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         mCameraManager.closeCamera();
 
         // Unregister the listeners
-        mImuManager.unregister();
+        //mImuManager.unregister();
 
         // Stop background thread
         mGpsManager.stopBackgroundThread();
@@ -268,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Save the file (if enabled)
             // http://stackoverflow.com/a/9006098
+
             if(MainActivity.is_recording) {
 
                 // Current timestamp of the event
@@ -305,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+
             // Make sure we close the image
             image.close();
         }
